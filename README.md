@@ -1,14 +1,17 @@
-# OCP Upgrade with ZTP
+# MNO Upgrade with ZTP
 
-This repo record the procedure and manifests used when upgrading a multiple nodes cluster with ODF installed from 4.12 to 4.14.
+This repo record the procedure and manifests used when upgrading a Multiple Node Openshift(MNO) cluster with Openshift 
+Data Foundation(ODF) installed from EUS-4.12 to EUS-4.14.
 
 ## Hub cluster
 
-We use a Single Node Openshift (SNO) instance to act as a ZTP hub, more information can be found [here](hub.md).
+We use a Single Node Openshift (SNO) instance to act as a RH ACM/ZTP hub, more information can be found [here](hub.md).
 
 ## Spoke cluster
 
-We use 6 KVM instances to simulate the baremetal servers, on top of those we install OCP 4.12 with ZTP.  more information can be found [here](spoke.md).
+We use 6 KVM instances to simulate the baremetal servers, on top of those we install OCP 4.12 and run the upgrade through 
+ZTP policies with TALM operator. 
+More information can be found [here](spoke.md).
 
 ## Upgrade
 
