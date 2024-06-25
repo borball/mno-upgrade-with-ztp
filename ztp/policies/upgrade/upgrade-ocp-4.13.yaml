@@ -1,0 +1,96 @@
+---
+apiVersion: ran.openshift.io/v1
+kind: PolicyGenTemplate
+metadata:
+  name: "upgrade-4.13"
+  namespace: "ztp-upgrade"
+  annotations:
+    force: "force-again"
+spec:
+  bindingRules:
+    config-version: upgrade-to-4.14
+  remediationAction: inform
+  sourceFiles:
+    - fileName: ClusterVersion.yaml
+      policyName: "set-channel"
+      metadata:
+        name: version
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "100"
+      spec:
+        channel: "eus-4.14"
+    - fileName: MachineConfigPool.yaml
+      policyName: "pause-mcp"
+      metadata:
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "110"
+        labels:
+          machineconfiguration.openshift.io/role: ht
+        name: ht
+      spec:
+        machineConfigSelector:
+          matchExpressions:
+            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,ht]}
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/ht: ""
+        paused: true
+    - fileName: MachineConfigPool.yaml
+      policyName: "pause-mcp"
+      metadata:
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "110"
+        labels:
+          machineconfiguration.openshift.io/role: std
+        name: std
+      spec:
+        machineConfigSelector:
+          matchExpressions:
+            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,std]}
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/ht: ""
+        paused: true
+    - fileName: AdminAcksCM.yaml
+      policyName: "admin-ack"
+      metadata:
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "120"
+      data:
+        ack-4.12-kube-1.26-api-removals-in-4.13: "true"
+    - fileName: ClusterVersion.yaml
+      policyName: "ocp-upgrade"
+      metadata:
+        name: version
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "130"
+      spec:
+        channel: "eus-4.14"
+        desiredUpdate:
+          version: 4.13.43
+      status:
+        history:
+          - version: 4.13.43
+            state: "Completed"
+    - fileName: DefaultCatsrc.yaml
+      policyName: "catalog-update"
+      metadata:
+        name: redhat-operators
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "140"
+      spec:
+        displayName: redhat-operators
+        image: registry.redhat.io/redhat/redhat-operator-index:v4.13
+        updateStrategy:
+          registryPoll:
+            interval: 5m
+    - fileName: Subscription.yaml
+      policyName: "odf-upgrade"
+      metadata:
+        name: odf-operator
+        namespace: openshift-storage
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "150"
+      spec:
+        channel: "stable-4.13"
+        name: odf-operator

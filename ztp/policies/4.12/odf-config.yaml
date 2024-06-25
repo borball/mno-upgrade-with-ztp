@@ -1,0 +1,17 @@
+---
+apiVersion: ran.openshift.io/v1
+kind: PolicyGenTemplate
+metadata:
+  name: "odf-config-4.12"
+  namespace: "ztp-common"
+spec:
+  bindingRules:
+    config-version: 4.12
+  remediationAction: inform
+  sourceFiles:
+    - fileName: LocalVolumeDiscovery.yaml
+      policyName: "odf-config"
+    - fileName: LocalVolumeSet.yaml
+      policyName: "odf-config"
+    - fileName: StorageCluster.yaml
+      policyName: "odf-config"

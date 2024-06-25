@@ -1,0 +1,9 @@
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    ran.openshift.io/ztp-deploy-wave: "2"
+  name: metallb-operatorgroup
+  namespace: metallb-system
+spec: {}

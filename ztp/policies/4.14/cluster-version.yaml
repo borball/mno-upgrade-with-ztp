@@ -1,0 +1,25 @@
+---
+apiVersion: ran.openshift.io/v1
+kind: PolicyGenTemplate
+metadata:
+  name: "cluster-version-4.14"
+  namespace: "ztp-common"
+spec:
+  bindingRules:
+    config-version: 4.14
+  remediationAction: inform
+  sourceFiles:
+    - fileName: ClusterVersion.yaml
+      policyName: "config-policy"
+      metadata:
+        name: version
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "100"
+      spec:
+        channel: "eus-4.14"
+        desiredUpdate:
+          version: 4.14.28
+      status:
+        history:
+          - version: 4.14.28
+            state: "Completed"

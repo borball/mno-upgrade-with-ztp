@@ -1,0 +1,20 @@
+---
+apiVersion: ran.openshift.io/v1alpha1
+kind: ClusterGroupUpgrade
+metadata:
+  name: upgrade-4.13
+  namespace: ztp-install
+spec:
+  clusters:
+    - mno
+  enable: true
+  managedPolicies:
+    - upgrade-4.13-set-channel
+    - upgrade-4.13-pause-mcp
+    - upgrade-4.13-admin-ack
+    - upgrade-4.13-ocp-upgrade
+    - upgrade-4.13-catalog-update
+    - upgrade-4.13-odf-upgrade
+  remediationStrategy:
+    maxConcurrency: 1
+    timeout: 240

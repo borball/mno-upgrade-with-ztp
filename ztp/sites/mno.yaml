@@ -1,0 +1,260 @@
+---
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "mno"
+  namespace: "mno"
+spec:
+  baseDomain: "outbound.vz.bos2.lab"
+  pullSecretRef:
+    name: "assisted-deployment-pull-secret"
+  clusterImageSetNameRef: "img4.12.45-x86-64-appsub"
+  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD74lZFSOSfH8fWf9L419M6TwfJQfruuEKODlf9jdFzxWji+Y8qUQqe3rV6bbc7joADJtKnB/amvMcBr3kl7uC3AvHQB+m/BY4EJAgxiGhnhQaznrHUFQhDF7OGw2c+DuzO+jZAO0ColKOr1oN5E8nZGqVJBNYvYdP3/vAx69oLvTTA5MMilL9Ftjbv3uq0iKqJJ6xQdCNIEoxpOaKm8tAC2o4Sae4pn1JJYvPyXjRBdtg9GO+0BpqTHMBz74IyVg6qgUTctymEAIFWFO0joFq7BadsChJD7Be7FJhilYxAPvFFsYuRnOuVbj9ZVV2hH2Hhqi7LwWFv/Hmz84xbl4+woPIuI5OnQ0ys9Ec+ZXeh1ImzRl7kkmJ7dHALY8kb886v2+mWEcv1IKYCcMssO8lf2ZCbau1VV0Z7H6aRrRzQDv0mETf+gTnyzT8uwKORSu208oLuWf4Asz979kcW8LF+gtRBpRgIY0INtNRoIRJCr8SHXGRveyzvMEDr2JRNDOM= root@hub-helper"
+  clusters:
+    - clusterName: "mno"
+      networkType: "OVNKubernetes"
+      clusterLabels:
+        #config-version: 4.12
+        config-version: upgrade-to-4.14
+      clusterNetwork:
+        - cidr: "10.128.0.0/14"
+          hostPrefix: 23
+      serviceNetwork:
+        - "172.30.0.0/16"
+      additionalNTPSources:
+        - pool.ntp.org
+      apiVIP: 192.168.58.58
+      ingressVIP: 192.168.58.59
+      nodes:
+        - hostName: "master0.mno.outbound.vz.bos2.lab"
+          role: master
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000080"
+          bmcCredentialsName:
+            name: "bmc-secret-master0"
+          bootMACAddress: "de:ad:be:ee:20:00"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.50
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:00"
+        - hostName: "master1.mno.outbound.vz.bos2.lab"
+          role: master
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000081"
+          bmcCredentialsName:
+            name: "bmc-secret-master1"
+          bootMACAddress: "de:ad:be:ee:20:01"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.51
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:01"
+        - hostName: "master2.mno.outbound.vz.bos2.lab"
+          role: master
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000082"
+          bmcCredentialsName:
+            name: "bmc-secret-master2"
+          bootMACAddress: "de:ad:be:ee:20:02"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.52
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:02"
+
+        - hostName: "worker0.mno.outbound.vz.bos2.lab"
+          role: worker
+          nodeLabels:
+            node-role.kubernetes.io/std: ""
+            cluster.ocs.openshift.io/openshift-storage: ""
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000083"
+          bmcCredentialsName:
+            name: "bmc-secret-worker0"
+          bootMACAddress: "de:ad:be:ee:20:03"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.53
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:03"
+        - hostName: "worker1.mno.outbound.vz.bos2.lab"
+          role: worker
+          nodeLabels:
+            node-role.kubernetes.io/std: ""
+            cluster.ocs.openshift.io/openshift-storage: ""
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000084"
+          bmcCredentialsName:
+            name: "bmc-secret-worker1"
+          bootMACAddress: "de:ad:be:ee:20:04"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.54
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:04"
+        - hostName: "worker2.mno.outbound.vz.bos2.lab"
+          role: worker
+          nodeLabels:
+            node-role.kubernetes.io/ht: ""
+            cluster.ocs.openshift.io/openshift-storage: ""
+          bmcAddress: "redfish-virtualmedia://192.168.58.15:8080/redfish/v1/Systems/11111111-0000-0000-0000-000000000085"
+          bmcCredentialsName:
+            name: "bmc-secret-worker2"
+          bootMACAddress: "de:ad:be:ee:20:05"
+          bootMode: "legacy"
+          rootDeviceHints:
+            deviceName: "/dev/vda"
+          nodeNetwork:
+            config:
+              interfaces:
+                - name: eth0
+                  type: ethernet
+                  state: up
+                  ipv4:
+                    enabled: true
+                    address:
+                      - ip: 192.168.58.55
+                        prefix-length: 25
+                  ipv6:
+                    enabled: false
+              dns-resolver:
+                config:
+                  search:
+                    - outbound.vz.bos2.lab
+                  server:
+                    - 192.168.58.15
+              routes:
+                config:
+                  - destination: 0.0.0.0/0
+                    next-hop-interface: eth0
+                    next-hop-address: 192.168.58.1
+                    table-id: 254
+            interfaces:
+              - name: "eth0"
+                macAddress: "de:ad:be:ee:20:05"

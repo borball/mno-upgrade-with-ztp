@@ -1,0 +1,41 @@
+---
+apiVersion: ran.openshift.io/v1
+kind: PolicyGenTemplate
+metadata:
+  name: "mcp-4.12"
+  namespace: "ztp-common"
+spec:
+  bindingRules:
+    config-version: 4.12
+  remediationAction: inform
+  sourceFiles:
+    - fileName: MachineConfigPool.yaml
+      policyName: "mcp-policy"
+      metadata:
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "5"
+        labels:
+          machineconfiguration.openshift.io/role: ht
+        name: ht
+      spec:
+        machineConfigSelector:
+          matchExpressions:
+            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,ht]}
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/ht: ""
+    - fileName: MachineConfigPool.yaml
+      policyName: "mcp-policy"
+      metadata:
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "5"
+        labels:
+          machineconfiguration.openshift.io/role: std
+        name: std
+      spec:
+        machineConfigSelector:
+          matchExpressions:
+            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,std]}
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/std: ""
