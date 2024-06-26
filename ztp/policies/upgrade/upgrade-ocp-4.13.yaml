@@ -8,7 +8,7 @@ metadata:
     force: "force-again"
 spec:
   bindingRules:
-    config-version: upgrade-to-4.14
+    config-version: upgrade-to-4.13
   remediationAction: inform
   sourceFiles:
     - fileName: ClusterVersion.yaml
@@ -49,7 +49,7 @@ spec:
             - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,std]}
         nodeSelector:
           matchLabels:
-            node-role.kubernetes.io/ht: ""
+            node-role.kubernetes.io/std: ""
         paused: true
     - fileName: AdminAcksCM.yaml
       policyName: "admin-ack"
@@ -94,3 +94,5 @@ spec:
       spec:
         channel: "stable-4.13"
         name: odf-operator
+      status:
+        state: AtLatestKnown

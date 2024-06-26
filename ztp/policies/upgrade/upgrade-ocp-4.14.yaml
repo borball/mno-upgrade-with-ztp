@@ -54,35 +54,5 @@ spec:
       spec:
         channel: "stable-4.14"
         name: odf-operator
-    - fileName: MachineConfigPool.yaml
-      policyName: "unpause-mcp"
-      metadata:
-        annotations:
-          ran.openshift.io/ztp-deploy-wave: "240"
-        labels:
-          machineconfiguration.openshift.io/role: ht
-        name: ht
-      spec:
-        machineConfigSelector:
-          matchExpressions:
-            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,ht]}
-        nodeSelector:
-          matchLabels:
-            node-role.kubernetes.io/ht: ""
-        paused: false
-    - fileName: MachineConfigPool.yaml
-      policyName: "unpause-mcp"
-      metadata:
-        annotations:
-          ran.openshift.io/ztp-deploy-wave: "240"
-        labels:
-          machineconfiguration.openshift.io/role: std
-        name: std
-      spec:
-        machineConfigSelector:
-          matchExpressions:
-            - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,std]}
-        nodeSelector:
-          matchLabels:
-            node-role.kubernetes.io/ht: ""
-        paused: false
+      status:
+        state: AtLatestKnown
