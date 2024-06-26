@@ -14,7 +14,7 @@ spec:
     - upgrade-4.13-admin-ack
     - upgrade-4.13-ocp-upgrade
     - upgrade-4.13-catalog-update
-    - upgrade-4.13-odf-upgrade
+    - upgrade-4.13-operator-upgrade
   remediationStrategy:
     maxConcurrency: 1
     timeout: 240

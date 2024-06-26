@@ -43,9 +43,9 @@ spec:
         image: registry.redhat.io/redhat/redhat-operator-index:v4.14
         updateStrategy:
           registryPoll:
-            interval: 5m
+            interval: 2m
     - fileName: Subscription.yaml
-      policyName: "odf-upgrade"
+      policyName: "operator-upgrade"
       metadata:
         name: odf-operator
         namespace: openshift-storage
@@ -54,5 +54,44 @@ spec:
       spec:
         channel: "stable-4.14"
         name: odf-operator
+      status:
+        state: AtLatestKnown
+    # SRIOV
+    - fileName: Subscription.yaml
+      policyName: "operator-upgrade"
+      metadata:
+        name: sriov-network-operator-subscription
+        namespace: openshift-sriov-network-operator
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "230"
+      spec:
+        name: sriov-network-operator
+        channel: "stable"
+      status:
+        state: AtLatestKnown
+    # LSO
+    - fileName: Subscription.yaml
+      policyName: "operator-upgrade"
+      metadata:
+        name: local-storage-operator
+        namespace: openshift-local-storage
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "230"
+      spec:
+        channel: "stable"
+        name: local-storage-operator
+      status:
+        state: AtLatestKnown
+    # MetalLB
+    - fileName: Subscription.yaml
+      policyName: "operator-upgrade"
+      metadata:
+        name: metallb-operator
+        namespace: metallb-system
+        annotations:
+          ran.openshift.io/ztp-deploy-wave: "230"
+      spec:
+        channel: "stable"
+        name: metallb-operator
       status:
         state: AtLatestKnown
