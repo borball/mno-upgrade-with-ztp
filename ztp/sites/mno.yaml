@@ -14,8 +14,10 @@ spec:
     - clusterName: "mno"
       networkType: "OVNKubernetes"
       clusterLabels:
-        #config-version: 4.12
-        config-version: upgrade-to-4.14
+        config-version: 4.12
+        #config-version: upgrade-to-4.13
+        #config-version: upgrade-to-4.14
+        #config-version: 4.14
       clusterNetwork:
         - cidr: "10.128.0.0/14"
           hostPrefix: 23

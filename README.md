@@ -17,14 +17,278 @@ More information can be found [here](spoke.md).
 
 We use ZTP/TALM to upgrade the cluster, following are the high level steps. 
 
-1. The current cluster has been bound with policies with cluster label: config-version: 4.12, and all policies are compliant.
-2. Update the cluster label in the siteConfig to: config-version: upgrade-to-4.13.
-3. The [policies](ztp/policies/upgrade) used to handle the upgrade will be created and their REMEDIATION ACTION is 'inform', state is 'NonCompliant'.
-4. Create ClusterGroupUpgrade(CGU) [CR](ztp/policies/upgrade/cgu-4.13.yaml) to opt-in the 'informed' and 'non-compliant' policies for 4.13 upgrade.
-5. The policies will start syncing on the cluster and cluster upgrade will be triggered later. Operators will be upgraded as well including the ODF operator.
-6. Once the policies in the CGU above are compliant, create another ClusterGroupUpgrade(CGU) [CR](ztp/policies/upgrade/cgu-4.14.yaml) to opt-in the 'informed' and 'non-compliant' policies for 4.14 upgrade.
-7. Once the policies in the CGU above are compliant, that means the cluster and operators shall have been upgraded to 4.14
-8. Update the cluster label in the siteConfig to: config-version: 4.14.
-9. Create ClusterGroupUpgrade(CGU) [CR](ztp/policies/upgrade/cgu-4.14-post.yaml) to trigger the 4.14 policies syncing. 
-10. Once all the policies are compliant, the whole upgrade completes.
+### Before upgrade
+
+The cluster has been installed with ZTP, and it's been bound with policies with cluster label: config-version: 4.12; 
+all policies are compliant:
+
+```shell
+# oc get clusterversion
+NAME      VERSION   AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.12.45   True        False         88m     Cluster version is 4.12.45
+
+# oc get node
+NAME                               STATUS   ROLES                  AGE    VERSION
+master0.mno.outbound.vz.bos2.lab   Ready    control-plane,master   94m    v1.25.14+a52e8df
+master1.mno.outbound.vz.bos2.lab   Ready    control-plane,master   115m   v1.25.14+a52e8df
+master2.mno.outbound.vz.bos2.lab   Ready    control-plane,master   115m   v1.25.14+a52e8df
+worker0.mno.outbound.vz.bos2.lab   Ready    std,worker             96m    v1.25.14+a52e8df
+worker1.mno.outbound.vz.bos2.lab   Ready    std,worker             96m    v1.25.14+a52e8df
+worker2.mno.outbound.vz.bos2.lab   Ready    ht,worker              96m    v1.25.14+a52e8df
+
+# oc get mcp
+NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED   MACHINECOUNT   READYMACHINECOUNT   UPDATEDMACHINECOUNT   DEGRADEDMACHINECOUNT   AGE
+ht       rendered-ht-78fd887b512802edd40db34f993ee986       True      False      False      1              1                   1                     0                      84m
+master   rendered-master-6199337060ed6568304e95c51de561ee   True      False      False      3              3                   3                     0                      107m
+std      rendered-std-78fd887b512802edd40db34f993ee986      True      False      False      2              2                   2                     0                      84m
+worker   rendered-worker-78fd887b512802edd40db34f993ee986   True      False      False      0              0                   0                     0                      107m
+
+# oc get policy -n mno
+NAME                                                REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-common.cluster-version-4.12-config-policy       inform               Compliant          87m
+ztp-common.mcp-4.12-mcp-policy                      inform               Compliant          87m
+ztp-common.odf-config-4.12-odf-config               inform               Compliant          87m
+ztp-common.operator-subs-4.12-catalog-policy        inform               Compliant          87m
+ztp-common.operator-subs-4.12-subscription-policy   inform               Compliant          87m
+```
+
+ODF was installed/setup properly with ZTP policies:
+
+```shell
+# oc get storageclusters.ocs.openshift.io -A
+NAMESPACE           NAME                 AGE   PHASE   EXTERNAL   CREATED AT             VERSION
+openshift-storage   ocs-storagecluster   85m   Ready              2024-06-28T16:19:29Z   4.12.0
+
+# oc get storageclass
+NAME                          PROVISIONER                             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+ocs-storagecluster-ceph-rbd   openshift-storage.rbd.csi.ceph.com      Delete          Immediate              true                   82m
+ocs-storagecluster-ceph-rgw   openshift-storage.ceph.rook.io/bucket   Delete          Immediate              false                  85m
+ocs-storagecluster-cephfs     openshift-storage.cephfs.csi.ceph.com   Delete          Immediate              true                   82m
+odf-localdisk                 kubernetes.io/no-provisioner            Delete          WaitForFirstConsumer   false                  85m
+openshift-storage.noobaa.io   openshift-storage.noobaa.io/obc         Delete          Immediate              false                  81m
+
+# oc rsh -n openshift-storage $(oc get pods -n openshift-storage -l app=rook-ceph-tools -o name) ceph -s
+  cluster:
+    id:     acda18aa-5fe1-4458-828a-cbe40a7e604b
+    health: HEALTH_OK
+
+  services:
+    mon: 3 daemons, quorum a,b,c (age 84m)
+    mgr: a(active, since 83m)
+    mds: 1/1 daemons up, 1 hot standby
+    osd: 3 osds: 3 up (since 83m), 3 in (since 83m)
+    rgw: 1 daemon active (1 hosts, 1 zones)
+
+  data:
+    volumes: 1/1 healthy
+    pools:   12 pools, 353 pgs
+    objects: 466 objects, 143 MiB
+    usage:   522 MiB used, 449 GiB / 450 GiB avail
+    pgs:     353 active+clean
+
+  io:
+    client:   2.6 KiB/s rd, 23 KiB/s wr, 3 op/s rd, 3 op/s wr
+```
+
+### Upgrade to 4.13
+#### Update cluster label
+
+Update the cluster label in the siteConfig to: config-version: upgrade-to-4.13. Commit/push to git repo.
+
+After that the status of policies:
+
+Hub:
+
+```shell
+# oc get policy -n ztp-upgrade
+NAME                            REMEDIATION ACTION   COMPLIANCE STATE   AGE
+upgrade-4.13-admin-ack          inform               NonCompliant       2d20h
+upgrade-4.13-catalog-update     inform               NonCompliant       2d20h
+upgrade-4.13-ocp-upgrade        inform               NonCompliant       2d20h
+upgrade-4.13-operator-upgrade   inform               NonCompliant       45h
+upgrade-4.13-pause-mcp          inform               NonCompliant       2d20h
+upgrade-4.13-set-channel        inform               NonCompliant       2d20h
+upgrade-4.14-admin-ack          inform                                  2d20h
+upgrade-4.14-catalog-update     inform                                  2d20h
+upgrade-4.14-ocp-upgrade        inform                                  2d20h
+upgrade-4.14-operator-upgrade   inform                                  45h
+```
+
+Spoke:
+```shell
+# oc get policy -n mno
+NAME                                        REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-upgrade.upgrade-4.13-admin-ack          inform               NonCompliant       14s
+ztp-upgrade.upgrade-4.13-catalog-update     inform               NonCompliant       14s
+ztp-upgrade.upgrade-4.13-ocp-upgrade        inform               NonCompliant       14s
+ztp-upgrade.upgrade-4.13-operator-upgrade   inform               NonCompliant       14s
+ztp-upgrade.upgrade-4.13-pause-mcp          inform               NonCompliant       14s
+ztp-upgrade.upgrade-4.13-set-channel        inform               NonCompliant       14s
+```
+#### Create CGU
+
+```shell
+oc apply -f ztp/policies/upgrade/cgu-4.13.yaml
+```
+
+This will trigger the associated policies to be synced on the cluster so that upgrade will be happening.
+
+Hub:
+```shell
+# oc get policy -n ztp-install -w
+NAME                                               REMEDIATION ACTION   COMPLIANCE STATE   AGE
+upgrade-4.13-upgrade-4.13-admin-ack-q74v5          enforce                                 14s
+upgrade-4.13-upgrade-4.13-catalog-update-flcvp     enforce                                 14s
+upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg        enforce                                 14s
+upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce                                 14s
+upgrade-4.13-upgrade-4.13-pause-mcp-t47gj          enforce                                 14s
+upgrade-4.13-upgrade-4.13-set-channel-j6l4g        enforce              Compliant          14s
+upgrade-4.13-upgrade-4.13-pause-mcp-t47gj          enforce                                 5m1s
+upgrade-4.13-upgrade-4.13-pause-mcp-t47gj          enforce              NonCompliant       5m6s
+upgrade-4.13-upgrade-4.13-pause-mcp-t47gj          enforce              Compliant          5m6s
+upgrade-4.13-upgrade-4.13-admin-ack-q74v5          enforce                                 10m
+upgrade-4.13-upgrade-4.13-admin-ack-q74v5          enforce              NonCompliant       10m
+upgrade-4.13-upgrade-4.13-admin-ack-q74v5          enforce              Compliant          10m
+upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg        enforce                                 15m
+upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg        enforce              NonCompliant       15m
+```
+
+Spoke:
+```shell
+# oc get policy -n mno -w
+NAME                                                      REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-install.upgrade-4.13-upgrade-4.13-pause-mcp-t47gj     enforce              Compliant          4m29s
+ztp-install.upgrade-4.13-upgrade-4.13-set-channel-j6l4g   enforce              Compliant          9m29s
+ztp-upgrade.upgrade-4.13-admin-ack                        inform               NonCompliant       12m
+ztp-upgrade.upgrade-4.13-catalog-update                   inform               NonCompliant       12m
+ztp-upgrade.upgrade-4.13-ocp-upgrade                      inform               NonCompliant       12m
+ztp-upgrade.upgrade-4.13-operator-upgrade                 inform               NonCompliant       12m
+ztp-upgrade.upgrade-4.13-pause-mcp                        inform               Compliant          12m
+ztp-upgrade.upgrade-4.13-set-channel                      inform               Compliant          12m
+ztp-install.upgrade-4.13-upgrade-4.13-admin-ack-q74v5     enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-admin-ack-q74v5     enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-admin-ack-q74v5     enforce              NonCompliant       4s
+ztp-install.upgrade-4.13-upgrade-4.13-admin-ack-q74v5     enforce              Compliant          4s
+ztp-upgrade.upgrade-4.13-admin-ack                        inform               Compliant          12m
+ztp-install.upgrade-4.13-upgrade-4.13-set-channel-j6l4g   enforce              Compliant          10m
+ztp-install.upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg   enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg   enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg   enforce              NonCompliant       2s
+ztp-install.upgrade-4.13-upgrade-4.13-ocp-upgrade-bvppg   enforce              NonCompliant       2s
+ztp-install.upgrade-4.13-upgrade-4.13-pause-mcp-t47gj     enforce              Compliant          10m
+```
+
+Upgrade in progress:
+
+```shell
+# oc get clusterversion -w
+NAME      VERSION   AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.12.45   True        True          41s     Working towards 4.13.43: 106 of 843 done (12% complete), waiting on etcd, kube-apiserver
+...
+version   4.12.45   True        True          41m     Working towards 4.13.43: 682 of 843 done (80% complete), waiting on network
+...
+version   4.13.43   True        False         23s     Cluster version is 4.13.43
+```
+
+Operators upgrade in progress:
+
+Hub:
+```shell
+# oc get policy -n ztp-install -w
+NAME                                               REMEDIATION ACTION   COMPLIANCE STATE   AGE
+upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce                                 90m
+upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              NonCompliant       90m
+upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              Compliant          92m
+
+```
+
+Spoke:
+```shell
+# oc get policy -n mno -w
+NAME                                                         REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-upgrade.upgrade-4.13-operator-upgrade                    inform               NonCompliant       91m
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce                                 0s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              NonCompliant       9s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              NonCompliant       9s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              NonCompliant       27s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              NonCompliant       99s
+ztp-install.upgrade-4.13-upgrade-4.13-operator-upgrade-zd99p   enforce              Compliant          117s
+```
+
+
+
+#### Validation
+
+- All policies were compliant. 
+- Cluster upgraded to 4.13.z.
+- Operators upgraded to 4.13.z.
+- ODF status healthy.
+
+After all policies were compliant, OCP and operators upgrade to 4.13 completed.
+
+Spoke:
+```shell
+# oc get policy -n mno
+NAME                                        REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-upgrade.upgrade-4.13-admin-ack          inform               Compliant          96m
+ztp-upgrade.upgrade-4.13-catalog-update     inform               Compliant          96m
+ztp-upgrade.upgrade-4.13-ocp-upgrade        inform               Compliant          96m
+ztp-upgrade.upgrade-4.13-operator-upgrade   inform               Compliant          96m
+ztp-upgrade.upgrade-4.13-pause-mcp          inform               Compliant          96m
+ztp-upgrade.upgrade-4.13-set-channel        inform               Compliant          96m
+```
+
+```shell
+# oc get clusterversion
+NAME      VERSION   AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.13.43   True        False         23s     Cluster version is 4.13.43
+
+# oc get csv -A -o name |sort|uniq
+clusterserviceversion.operators.coreos.com/local-storage-operator.v4.13.0-202405222206
+clusterserviceversion.operators.coreos.com/mcg-operator.v4.13.9-rhodf
+clusterserviceversion.operators.coreos.com/metallb-operator.v4.13.0-202405222206
+clusterserviceversion.operators.coreos.com/ocs-operator.v4.13.9-rhodf
+clusterserviceversion.operators.coreos.com/odf-csi-addons-operator.v4.13.9-rhodf
+clusterserviceversion.operators.coreos.com/odf-operator.v4.13.9-rhodf
+clusterserviceversion.operators.coreos.com/packageserver
+clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.13.0-202406060837
+
+# oc rsh -n openshift-storage $(oc get pods -n openshift-storage -l app=rook-ceph-tools -o name) ceph -s
+  cluster:
+    id:     acda18aa-5fe1-4458-828a-cbe40a7e604b
+    health: HEALTH_WARN
+            1 osds down
+            1 host (1 osds) down
+            all OSDs are running quincy or later but require_osd_release < quincy
+
+  services:
+    mon: 3 daemons, quorum a,b,c (age 86s)
+    mgr: a(active, since 69s)
+    mds: 1/1 daemons up, 1 standby
+    osd: 3 osds: 2 up (since 0.33835s), 3 in (since 3h)
+    rgw: 1 daemon active (1 hosts, 1 zones)
+
+  data:
+    volumes: 1/1 healthy
+    pools:   12 pools, 353 pgs
+    objects: 471 objects, 183 MiB
+    usage:   586 MiB used, 449 GiB / 450 GiB avail
+    pgs:     353 active+clean
+
+  io:
+    client:   15 KiB/s wr, 0 op/s rd, 1 op/s wr
+
+  progress:
+```
+
+### Upgrade to 4.14
+#### Update cluster label
+#### Create CGU
+#### Validation
+
+### Post upgrade
+#### Update cluster label
+#### Create CGU
+#### Validation
 
