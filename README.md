@@ -284,11 +284,161 @@ clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.13.0-202406
 
 ### Upgrade to 4.14
 #### Update cluster label
+Update the cluster label in the siteConfig to: config-version: upgrade-to-4.14. Commit/push to git repo.
+
+After that the status of policies:
+
+Hub:
+```shell
+# oc get policy -n ztp-upgrade
+NAME                            REMEDIATION ACTION   COMPLIANCE STATE   AGE
+upgrade-4.13-admin-ack          inform                                  3d22h
+upgrade-4.13-catalog-update     inform                                  3d22h
+upgrade-4.13-ocp-upgrade        inform                                  3d22h
+upgrade-4.13-operator-upgrade   inform                                  3d
+upgrade-4.13-pause-mcp          inform                                  3d22h
+upgrade-4.13-set-channel        inform                                  3d22h
+upgrade-4.14-admin-ack          inform               NonCompliant       3d22h
+upgrade-4.14-catalog-update     inform               NonCompliant       3d22h
+upgrade-4.14-ocp-upgrade        inform               NonCompliant       3d22h
+upgrade-4.14-operator-upgrade   inform               NonCompliant       3d
+```
+Spoke:
+```shell
+# oc get policy -n mno
+NAME                                        REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-upgrade.upgrade-4.14-admin-ack          inform               NonCompliant       22s
+ztp-upgrade.upgrade-4.14-catalog-update     inform               NonCompliant       22s
+ztp-upgrade.upgrade-4.14-ocp-upgrade        inform               NonCompliant       22s
+ztp-upgrade.upgrade-4.14-operator-upgrade   inform               NonCompliant       22s
+```
 #### Create CGU
+
+```shell
+oc apply -f ztp/policies/upgrade/cgu-4.14.yaml
+```
+
+This will trigger the associated policies to be synced on the cluster so that upgrade will be happening.
+
+Hub:
+```shell
+# oc get policy -n ztp-install -w
+NAME                                               REMEDIATION ACTION   COMPLIANCE STATE   AGE
+upgrade-4.14-upgrade-4.14-admin-ack-xsr6t          enforce              Compliant          58s
+upgrade-4.14-upgrade-4.14-catalog-update-kt2nx     enforce                                 57s
+upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t        enforce                                 58s
+upgrade-4.14-upgrade-4.14-operator-upgrade-wr6vv   enforce                                 57s
+upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t        enforce                                 5m1s
+upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t        enforce              NonCompliant       5m2s
+```
+Spoke:
+```shell
+# oc get policy -n mno -w
+NAME                                                      REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-install.upgrade-4.14-upgrade-4.14-admin-ack-xsr6t     enforce              Compliant          63s
+ztp-upgrade.upgrade-4.14-admin-ack                        inform               Compliant          3m11s
+ztp-upgrade.upgrade-4.14-catalog-update                   inform               NonCompliant       3m11s
+ztp-upgrade.upgrade-4.14-ocp-upgrade                      inform               NonCompliant       3m11s
+ztp-upgrade.upgrade-4.14-operator-upgrade                 inform               NonCompliant       3m11s
+ztp-install.upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t   enforce                                 0s
+ztp-install.upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t   enforce                                 0s
+ztp-install.upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t   enforce              NonCompliant       1s
+ztp-install.upgrade-4.14-upgrade-4.14-ocp-upgrade-8cd6t   enforce              NonCompliant       1s
+```
+
+Cluster upgrade in progress:
+```shell
+# oc get clusterversion
+NAME      VERSION   AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.13.43   True        True          7m10s   Working towards 4.14.28: 118 of 860 done (13% complete), waiting on kube-apiserver
+...
+version   4.14.28   True        False         22m     Cluster version is 4.14.28
+```
+
 #### Validation
+After all policies were compliant:
+
+Spoke:
+```shell
+# oc get policy -n mno -w
+NAME                                        REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-upgrade.upgrade-4.14-admin-ack          inform               Compliant          140m
+ztp-upgrade.upgrade-4.14-catalog-update     inform               Compliant          140m
+ztp-upgrade.upgrade-4.14-ocp-upgrade        inform               Compliant          140m
+ztp-upgrade.upgrade-4.14-operator-upgrade   inform               Compliant          140m
+```
+
+The cluster was upgraded to 4.14:
+```shell
+version   4.14.28   True        False         22m     Cluster version is 4.14.28
+```
+
+Operators were upgraded to 4.14 as well:
+```shell
+# oc get csv -A -o name|sort|uniq
+clusterserviceversion.operators.coreos.com/local-storage-operator.v4.14.0-202406180839
+clusterserviceversion.operators.coreos.com/mcg-operator.v4.14.8-rhodf
+clusterserviceversion.operators.coreos.com/metallb-operator.v4.14.0-202406180839
+clusterserviceversion.operators.coreos.com/ocs-operator.v4.14.8-rhodf
+clusterserviceversion.operators.coreos.com/odf-csi-addons-operator.v4.14.8-rhodf
+clusterserviceversion.operators.coreos.com/odf-operator.v4.14.8-rhodf
+clusterserviceversion.operators.coreos.com/packageserver
+clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.14.0-202405281408
+```
 
 ### Post upgrade
+
+We don't expect too many changes happen in this step, since the cluster and operators have been upgraded to 4.14, we just want to make sure
+the desired 4.14 policies become compliant as any other fresh-installed cluster through ZTP 4.14 policies.
+
 #### Update cluster label
+Update the cluster label: config-version: 4.14. Commit/push to git repo. 
+
+After that the status of policies, you can see some policies were already complaint which is normal.
+
+Hub:
+
+```shell
+# oc get policy -n ztp-common
+NAME                                     REMEDIATION ACTION   COMPLIANCE STATE   AGE
+cluster-version-4.12-config-policy       inform                                  7d21h
+cluster-version-4.14-config-policy       inform               Compliant          8d
+mcp-4.12-mcp-policy                      inform                                  7d21h
+mcp-4.14-mcp-policy                      inform               Compliant          8d
+odf-config-4.12-odf-config               inform                                  7d21h
+odf-config-4.14-odf-config               inform               NonCompliant       8d
+operator-subs-4.12-catalog-policy        inform                                  7d21h
+operator-subs-4.12-subscription-policy   inform                                  7d21h
+operator-subs-4.14-catalog-policy        inform               NonCompliant       7d21h
+operator-subs-4.14-subscription-policy   inform               Compliant          8d
+```
+
+Spoke:
+```shell
+# oc get policy -n mno
+NAME                                                REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-common.cluster-version-4.14-config-policy       inform               Compliant          20s
+ztp-common.mcp-4.14-mcp-policy                      inform               Compliant          20s
+ztp-common.odf-config-4.14-odf-config               inform               NonCompliant       20s
+ztp-common.operator-subs-4.14-catalog-policy        inform               NonCompliant       20s
+ztp-common.operator-subs-4.14-subscription-policy   inform               Compliant          20s
+```
 #### Create CGU
+
+```shell
+oc apply -f ztp/policies/upgrade/cgu-4.14-post.yaml
+```
+
 #### Validation
 
+Policies were compliant:
+
+```shell
+# oc get policy -n mno
+NAME                                                REMEDIATION ACTION   COMPLIANCE STATE   AGE
+ztp-common.cluster-version-4.14-config-policy       inform               Compliant          33m
+ztp-common.mcp-4.14-mcp-policy                      inform               Compliant          33m
+ztp-common.odf-config-4.14-odf-config               inform               Compliant          33m
+ztp-common.operator-subs-4.14-catalog-policy        inform               Compliant          33m
+ztp-common.operator-subs-4.14-subscription-policy   inform               Compliant          33m
+```
