@@ -5,21 +5,35 @@ Data Foundation(ODF) installed from EUS-4.12 to EUS-4.14.
 
 ## Hub cluster
 
-We use a Single Node Openshift (SNO) instance to act as a RH ACM/ZTP hub, more information can be found [here](hub.md).
+We used a Single Node Openshift (SNO) instance to act as a RH ACM/ZTP hub, more information can be found [here](hub.md).
 
 ## Spoke cluster
 
-We use 6 KVM instances to simulate the baremetal servers, on top of those we install OCP 4.12 and run the upgrade through 
+We used 6 KVM instances to simulate the baremetal servers, on top of those we installed OCP 4.12 and ran the upgrade through 
 ZTP policies with TALM operator. 
 More information can be found [here](spoke.md).
 
+## Policies
+
+We prepared two set of policies for OCP 4.12 and OCP 4.14. For a fresh-installed cluster those policies can be bound with cluster label 'config-version: 4.12'
+or 'config-version: 4.14'. 
+
+We also prepared a set of policies to handle the cluster/operator upgrade. 
+Our target for the cluster upgraded from 4.12 to 4.14 is that the 4.14 policies shall be compliant on the cluster without special changes.
+The idea to drive the upgrade is to modify the cluster label with steps below: 
+
+- (initial state) config-version: 4.12
+- (upgrade to 4.13) config-version: upgrade-to-4.13
+- (upgrade to 4.14) config-version: upgrade-to-4.14
+- (post upgrade) config-version: 4.14
+
 ## Upgrade
 
-We use ZTP/TALM to upgrade the cluster, following are the high level steps. 
+We used ZTP/TALM to upgrade the cluster, following were the high level steps. 
 
 ### Before upgrade
 
-The cluster has been installed with ZTP, and it's been bound with policies with cluster label: config-version: 4.12; 
+The cluster had been installed with ZTP, and it had been bound with policies with cluster label: config-version: 4.12; 
 all policies are compliant:
 
 ```shell
