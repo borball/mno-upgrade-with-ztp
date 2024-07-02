@@ -271,16 +271,13 @@ clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.13.0-202406
 # oc rsh -n openshift-storage $(oc get pods -n openshift-storage -l app=rook-ceph-tools -o name) ceph -s
   cluster:
     id:     acda18aa-5fe1-4458-828a-cbe40a7e604b
-    health: HEALTH_WARN
-            1 osds down
-            1 host (1 osds) down
-            all OSDs are running quincy or later but require_osd_release < quincy
+    health: HEALTH_OK
 
   services:
     mon: 3 daemons, quorum a,b,c (age 86s)
     mgr: a(active, since 69s)
     mds: 1/1 daemons up, 1 standby
-    osd: 3 osds: 2 up (since 0.33835s), 3 in (since 3h)
+    osd: 3 osds: 3 up (since 0.33835s), 3 in (since 3h)
     rgw: 1 daemon active (1 hosts, 1 zones)
 
   data:
@@ -292,8 +289,6 @@ clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.13.0-202406
 
   io:
     client:   15 KiB/s wr, 0 op/s rd, 1 op/s wr
-
-  progress:
 ```
 
 ### Upgrade to 4.14
@@ -402,13 +397,13 @@ clusterserviceversion.operators.coreos.com/sriov-network-operator.v4.14.0-202405
 
 ### Post upgrade
 
-We don't expect too many changes happen in this step, since the cluster and operators have been upgraded to 4.14, we just want to make sure
+We don't expect too many changes to happen in this step, since the cluster and operators have been upgraded to 4.14, we just want to make sure
 the desired 4.14 policies become compliant as any other fresh-installed cluster through ZTP 4.14 policies.
 
 #### Update cluster label
 Update the cluster label: config-version: 4.14. Commit/push to git repo. 
 
-After that the status of policies, you can see some policies were already complaint which is normal.
+After that the status of policies, you can see some policies were already compliant which is normal.
 
 Hub:
 
@@ -440,7 +435,7 @@ ztp-common.operator-subs-4.14-subscription-policy   inform               Complia
 #### Create CGU
 
 ```shell
-oc apply -f ztp/policies/upgrade/cgu-4.14-post.yaml
+# oc apply -f ztp/policies/upgrade/cgu-4.14-post.yaml
 ```
 
 #### Validation
