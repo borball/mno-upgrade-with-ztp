@@ -451,3 +451,10 @@ ztp-common.odf-config-4.14-odf-config               inform               Complia
 ztp-common.operator-subs-4.14-catalog-policy        inform               Compliant          33m
 ztp-common.operator-subs-4.14-subscription-policy   inform               Compliant          33m
 ```
+
+## Limitations
+
+Please notice that after the cluster is upgraded to newer version, the day1 tunings(everything under extra-manifest) 
+applied on the cluster shall be updated to newer version as well, this repo doesn't cover this part, instead you can
+implement additional upgrade policy to handle it so that you won't miss day1 tuning changes after the cluster being 
+upgraded to newer version.
