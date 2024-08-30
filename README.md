@@ -458,3 +458,8 @@ Please notice that after the cluster is upgraded to newer version, the day1 tuni
 applied on the cluster shall be updated to newer version as well, this repo doesn't cover this part, instead you can
 implement additional upgrade policy to handle it so that you won't miss day1 tuning changes after the cluster being 
 upgraded to newer version.
+
+## Bugs
+
+Due to bug https://issues.redhat.com/browse/OCPBUGS-36356(see clones on all other branches) you may see kubelet on the 
+node could not be started automatically after the node reboot, a manual intervention is required to bring up the kubelet.
